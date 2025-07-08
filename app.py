@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
-import os  # ✅ Add for port handling
+import os
 
 app = Flask(__name__)
 
-# 🔶 Step 1: Travel website pages
+# 🔶 Step 1: Tumhare travel website ke pages
 travel_pages = [
     "https://redstartravels.co/services",
     "https://redstartravels.co/about",
@@ -27,7 +27,7 @@ def scrape_travel_site():
             all_data += f"\n\nPAGE: {url}\nError: {str(e)}"
     return all_data
 
-# 🔥 Step 3: Scrape website on app startup
+# 🔥 Step 3: Load website data once when app starts
 try:
     travel_site_data = scrape_travel_site()
     print("✅ Website data scraped successfully")
@@ -44,12 +44,13 @@ def chatbot_response():
     user_input = request.args.get("msg")
     try:
         headers = {
-            "Authorization": "Bearer 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",
+            "Authorization": "Bearer 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",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://daudkhan.com",
             "X-Title": "Khan-Chatbot"
         }
 
+        # ✅ Prompt with scraped website data
         prompt = f"""
         You are a helpful travel assistant.
         Only answer in one line.
@@ -79,7 +80,7 @@ def chatbot_response():
     except Exception as e:
         return jsonify(reply="Error: " + str(e))
 
-# ✅ This is the important part for Railway deployment
+# ✅ Render / Railway friendly
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=False, host="0.0.0.0", port=port)
