@@ -5,7 +5,7 @@ import os
 
 app = Flask(__name__)
 
-# 🔶 Step 1: Tumhare travel website ke pages
+# 🔹 Website pages to scrape
 travel_pages = [
     "https://redstartravels.co/services",
     "https://redstartravels.co/about",
@@ -13,7 +13,7 @@ travel_pages = [
     "https://redstartravels.co/packages"
 ]
 
-# 🔷 Step 2: Scraping function
+# 🔸 Web scraping function
 def scrape_travel_site():
     all_data = ""
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -27,60 +27,55 @@ def scrape_travel_site():
             all_data += f"\n\nPAGE: {url}\nError: {str(e)}"
     return all_data
 
-# 🔥 Step 3: Load website data once when app starts
+# 🔥 Scrape on app start
 try:
     travel_site_data = scrape_travel_site()
-    print("✅ Website data scraped successfully")
+    print("✅ Scraping success")
 except Exception as e:
-    travel_site_data = "⚠️ Failed to scrape website: " + str(e)
+    travel_site_data = "❌ Scraping failed: " + str(e)
     print(travel_site_data)
 
 @app.route("/")
-def index():
+def home():
     return render_template("chat.html")
 
 @app.route("/get")
-def chatbot_response():
+def get_bot_response():
     user_input = request.args.get("msg")
+
+    headers = {
+        "Authorization": "Bearer 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",
+        "Content-Type": "application/json"
+    }
+
+    prompt = f"""
+    You are a helpful travel assistant. Reply in 1 short line only.
+
+    Website Info:
+    {travel_site_data}
+
+    User: {user_input}
+    """
+
+    payload = {
+        "model": "mistralai/mistral-7b-instruct",
+        "messages": [
+            {"role": "system", "content": "You're a helpful travel AI. Be short and to the point."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
     try:
-        headers = {
-            "Authorization": "Bearer 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",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://daudkhan.com",
-            "X-Title": "Khan-Chatbot"
-        }
-
-        # ✅ Prompt with scraped website data
-        prompt = f"""
-        You are a helpful travel assistant.
-        Only answer in one line.
-
-        Website info:
-        {travel_site_data}
-
-        User: {user_input}
-        """
-
-        payload = {
-            "model": "mistralai/mistral-7b-instruct",
-            "messages": [
-                {"role": "system", "content": "You're THRILLING TECH helpful AI assistant. Only reply in 1 line."},
-                {"role": "user", "content": prompt}
-            ]
-        }
-
         res = requests.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers)
         data = res.json()
-
         if "choices" in data:
             return jsonify(reply=data["choices"][0]["message"]["content"])
         else:
             return jsonify(reply="AI Error: " + str(data))
-
     except Exception as e:
         return jsonify(reply="Error: " + str(e))
 
-# ✅ Render / Railway friendly
+# ✅ For deployment (Railway, Render)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    app.run(debug=True, host="0.0.0.0", port=port)
